@@ -1,5 +1,4 @@
-window.onload = function() {
-	
+window.onload = function() {	
 	//definidos no final do código
 	document.addEventListener("keydown", keyPressed);
 	document.addEventListener("keyup", keyReleased)
@@ -19,14 +18,19 @@ window.onload = function() {
 	function Player(x, color) {
 		this.x = x;
 		this.y = H/2 - 50;
-		this.baseSpeed = 8;
-		this.speed = 2;
+		this.speed = 0.5;
 		this.dy = 0;
 		this.w = 20;
 		this.h = 100;
 		this.color = color;
 		this.update = function(){
 			this.y += this.dy;
+			if(this.y < 0) {
+				this.y = 0;
+			}
+			if(this.y + this.h > H) {
+				this.y = H - this.h;
+			}
 		};
 
 		this.draw = function(){
@@ -36,35 +40,35 @@ window.onload = function() {
 
 		this.goUp = function() {
 			if(this.dy === 0) {
-				this.dy = this.baseSpeed*-1;
-				return;
+				this.dy = -8;
 			}
-			if(this.dy > -16) {
-				this.dy -= this.speed;
+			this.dy -= this.speed;
+			if(this.dy < -12) {
+				this.dy = -12;
 			}
 		};
 
 		this.goDown = function() {
 			if(this.dy === 0) {
-				this.dy = this.baseSpeed;
-				return;
+				this.dy = 8;
 			}
-			if(this.dy < 16) {
-				this.dy += this.speed;
+			this.dy += this.speed;
+			if(this.dy > 12) {
+				this.dy = 12;
 			}
 		};
 
 		this.stop = function() {
 			this.dy = 0
-		}
+		};
 	}
 
 	var ball = {
 		x: null,
 		y: null,
 		size: 20,
-		dx: 0,
-		dy: 8,
+		dx: 4,
+		dy: 0,
 		update: function() {
 			this.y += this.dy;
 			this.x += this.dx;
@@ -76,11 +80,57 @@ window.onload = function() {
 				this.y = H - this.size;
 				this.dy *= -1;
 			}
+			if(this.x + this.size > W) {
+				//blue scores
+				this.dx = 4;
+				this.dy = 0;
+				this.x = 0;
+				this.y = (H - this.size)/2;
+			}
+			if(this.x < 0) {
+				//red scores
+				this.dx = -4;
+				this.dy = 0;
+				this.x = W - this.size;
+				this.y = (H - this.size)/2;
+			}
+			this.playerCollision();	
 		},
-
 		draw: function() {
 			ctx.fillStyle = "#FFF";
 			ctx.fillRect(this.x, this.y, this.size, this.size);
+		},
+		playerCollision: function() {
+			if(this.dx < 0) {
+				//checks for blue collision
+				if(this.x < player.blue.x + player.blue.w) {
+					if(this.y + this.size > player.blue.y && this.y < player.blue.y + player.blue.h) {
+						this.x = player.blue.x + player.blue.w;
+						this.dx *= -1;
+						if(player.blue.dy !== 0) {							
+							this.dy = player.blue.dy * -1;
+						}
+						if(this.dx < 12) {
+							this.dx += 0.5;
+						}
+					}
+				}
+			} else {
+				//checks for red collision
+				if(this.x + this.size > player.red.x) {
+					if(this.y + this.size > player.red.y && this.y < player.red.y + player.red.h) {
+						this.x = player.red.x - this.size;
+						this.dx *= -1;
+						if(player.red.dy !== 0) {
+							this.dy = player.red.dy * -1;
+						}
+						if(this.dx > -12){
+							this.dx -= 0.5;
+						}
+					}
+				}
+			}
+			console.log(ball.dx);
 		}
 	}
 
@@ -92,7 +142,6 @@ window.onload = function() {
 	}
 
 	function run() {
-		console.log(player.blue.dy + " - " + player.red.dy);
 		update();
 		draw();
 		window.requestAnimationFrame(run, canvas);
@@ -101,9 +150,6 @@ window.onload = function() {
 	function update() {
 		player.blue.update();
 		player.red.update();
-		/*for(var i = 0; i < players.length; i++) {
-			players[i].update();
-		}*/
 		ball.update();
 	}
 
@@ -112,14 +158,12 @@ window.onload = function() {
 		ctx.fillRect(0,0,W,H);
 		player.blue.draw();
 		player.red.draw();
-		/*for(var i = 0; i < players.length; i++) {
-			players[i].draw();
-		}*/
 		ball.draw();
 	}
 
 	function keyPressed(key) {
 		if(key.which === wKey) {
+			//sobe player azul
 			player.blue.goUp();
 		}
 		if(key.which === sKey) {
@@ -141,7 +185,6 @@ window.onload = function() {
 			player.blue.stop();
 		}
 		if(key.which === upArrow || key.which === downArrow) {
-			//sobe player vermelho
 			player.red.stop();
 		}		
 	}
