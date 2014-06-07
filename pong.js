@@ -7,7 +7,7 @@ window.onload = function() {
 	var gameMode = 0;
 	var W = 800, H = 400;
 	var upArrow = 38, downArrow = 40, wKey = 87, sKey = 83, enterKey = 13, escKey = 27;
-	var blueScore = 0, redScore = 0, computerScore = 0, coopScore, wallScore;
+	var blueScore = 0, redScore = 0, computerScore = 0, coopScore = 0, wallScore = 0;
 	var canvas = document.getElementById("canvas");
 	var ctx = canvas.getContext("2d");
 	canvas.width = W;
@@ -180,6 +180,9 @@ window.onload = function() {
 				} else if(gameMode === 2) {
 					//computer scores
 					computerScore++;
+				} else {
+					wallScore = 0;
+					coopScore = 0;
 				}
 				this.dx = 4;
 				this.dy = 0;
@@ -190,6 +193,8 @@ window.onload = function() {
 				//red scores
 				if(gameMode === 1 || gameMode === 2){
 					redScore++;
+				} else {
+					coopScore = 0;
 				}
 				this.dx = -4;
 				this.dy = 0;
@@ -212,63 +217,88 @@ window.onload = function() {
 			if(gameMode === 1) {
 				if(this.dx < 0) {
 					//checks for blue collision
-					if(this.x < player.blue.x + player.blue.w) {
-						if(this.y + this.size > player.blue.y && this.y < player.blue.y + player.blue.h) {
-							this.x = player.blue.x + player.blue.w;
-							this.dx *= -1;
-							if(player.blue.dy !== 0) {							
-								this.dy = player.blue.dy * -1;
-							}
-							if(this.dx < 12) {
-								this.dx += 0.5;
-							}
-						}
-					}
+					this.blueCollision();
 				} else {
 					//checks for red collision
-					if(this.x + this.size > player.red.x) {
-						if(this.y + this.size > player.red.y && this.y < player.red.y + player.red.h) {
-							this.x = player.red.x - this.size;
-							this.dx *= -1;
-							if(player.red.dy !== 0) {
-								this.dy = player.red.dy * -1;
-							}
-							if(this.dx > -12){
-								this.dx -= 0.5;
-							}
-						}
-					}
+					this.redCollision();
 				}
 			} else if(gameMode === 2) {
 				console.log('colisao gamemode 2');
 				if(this.dx < 0) {
 					//checks for computer collision
-					if(this.x < computer.x + computer.w) {
-						if(this.y + this.size > computer.y && this.y < computer.y + computer.h) {
-							this.x = computer.x + computer.w;
-							this.dx *= -1;
-							if(computer.dy !== 0) {							
-								this.dy = computer.dy * -1;
-							}
-							if(this.dx < 12) {
-								this.dx += 0.5;
-							}
-						}
-					}
+					this.computerCollision();
 				} else {
 					//checks for red collision
-					if(this.x + this.size > player.red.x) {
-						if(this.y + this.size > player.red.y && this.y < player.red.y + player.red.h) {
-							this.x = player.red.x - this.size;
-							this.dx *= -1;
-							if(player.red.dy !== 0) {
-								this.dy = player.red.dy * -1;
-							}
-							if(this.dx > -12){
-								this.dx -= 0.5;
-							}
-						}
+					this.redCollision();
+				}
+			} else if(gameMode === 3) {
+				if(this.dx < 0) {
+					this.blueCollision();
+				} else {
+					this.redCollision();
+				}
+			} else if(gameMode === 4) {
+				if(this.dx < 0) {
+					this.wallCollision();
+				} else {
+					this.redCollision();
+				}
+			}
+		},
+		redCollision: function() {
+			if(this.x + this.size > player.red.x) {
+				if(this.y + this.size > player.red.y && this.y < player.red.y + player.red.h) {
+					this.x = player.red.x - this.size;
+					this.dx *= -1;
+					if(player.red.dy !== 0) {
+						this.dy = player.red.dy * -1;
 					}
+					if(this.dx > -12){
+						this.dx -= 0.5;
+					}
+					if(gameMode === 3 && this.dy !== 0) {
+						coopScore++;
+					}
+				}
+			}
+		},
+		blueCollision: function() {
+			if(this.x < player.blue.x + player.blue.w) {
+				if(this.y + this.size > player.blue.y && this.y < player.blue.y + player.blue.h) {
+					this.x = player.blue.x + player.blue.w;
+					this.dx *= -1;
+					if(player.blue.dy !== 0) {							
+						this.dy = player.blue.dy * -1;
+					}
+					if(this.dx < 12) {
+						this.dx += 0.5;
+					}
+					if(gameMode === 3 && this.dy !== 0) {
+						coopScore++;
+					}
+				}
+			}
+		},
+		computerCollision: function() {
+			if(this.x < computer.x + computer.w) {
+				if(this.y + this.size > computer.y && this.y < computer.y + computer.h) {
+					this.x = computer.x + computer.w;
+					this.dx *= -1;
+					if(computer.dy !== 0) {							
+						this.dy = computer.dy * -1;
+					}
+					if(this.dx < 12) {
+						this.dx += 0.5;
+					}
+				}
+			}	
+		},
+		wallCollision: function() {
+			if(this.x < wall.x + wall.w) {
+				this.x = wall.x + wall.w;
+				this.dx *= -1;
+				if(this.dy !== 0) {
+					wallScore++;
 				}
 			}
 		}
@@ -286,14 +316,14 @@ window.onload = function() {
 			console.log(ball.y);
 			if(ball.y < this.y) {
 				if(ball.dy !== 0) {
-					this.y += ball.dy*0.8;
+					this.y += ball.dy*0.9;
 				} else {
 					this.y -= this.speed;
 				}
 			}
 			if(ball.y + ball.size > this.y + this.h) {
 				if(ball.dy !== 0){
-					this.y += ball.dy*0.8;
+					this.y += ball.dy*0.9;
 				} else {
 					this.y += this.speed;
 				}
@@ -312,6 +342,18 @@ window.onload = function() {
 		reset: function() {
 			this.x = 20;
 			this.y = H/2 - 50;
+		}
+	};
+
+	var wall = {
+		x: 20,
+		y: 0,
+		w: 20,
+		h: H,
+		color: "#FFF",
+		draw: function() {
+			ctx.fillStyle = this.color;
+			ctx.fillRect(this.x, this.y, this.w, this.h);
 		}
 	};
 
@@ -411,12 +453,24 @@ window.onload = function() {
 	}
 
 	function drawCoOp() {
+		ctx.font="40px Helvetica";
+		ctx.fillStyle = "#FFF";
+		var width = ctx.measureText(coopScore).width;
+		var x = W/2 - width/2;
+		var y = 40;
+		ctx.fillText(coopScore, x, y);
 		player.blue.draw();
 		player.red.draw();
 		ball.draw();	
 	}
 
 	function drawPvW() {
+		ctx.font="40px Helvetica";
+		ctx.fillStyle = "#FFF";
+		var width = ctx.measureText(wallScore).width;
+		var x = W/2 - width/2;
+		var y = 40;
+		ctx.fillText(wallScore, x, y);
 		player.red.draw();
 		wall.draw();
 		ball.draw();
@@ -438,11 +492,15 @@ window.onload = function() {
 
 	function startCoOp() {
 		gameMode = 3;
+		player.ble = new Player(20, "#00F");
+		player.red = new Player(W - 40, "#F00");
+		ball.reset();
 		console.log('test');
 	}
 
 	function startPvW() {
 		gameMode = 4;
+		player.red = new Player(W - 40, "#F00");
 		console.log('test');
 	}
 
@@ -456,6 +514,12 @@ window.onload = function() {
 		}
 		if(gameMode === 2) {
 			pvcKeyPressed(key);
+		}
+		if(gameMode === 3) {
+			coopKeyPressed(key);
+		}
+		if(gameMode === 4) {
+			pvwKeyPressed(key);
 		}
 
 	}
@@ -484,7 +548,7 @@ window.onload = function() {
 			//desce player vermelho
 			player.red.goDown();
 		} else if(key.which === escKey) {
-			gameMode = 0;
+			goMenu();
 		}
 	}
 
@@ -496,7 +560,37 @@ window.onload = function() {
 			//desce player vermelho
 			player.red.goDown();
 		} else if(key.which === escKey) {
-			gameMode = 0;
+			goMenu();
+		}
+	}
+
+	function coopKeyPressed(key) {
+		if(key.which === wKey) {
+			//sobe player azul
+			player.blue.goUp();
+		} else if(key.which === sKey) {
+			//desce player azul
+			player.blue.goDown();
+		} else if(key.which === upArrow) {
+			//sobe player vermelho
+			player.red.goUp();
+		} else if(key.which === downArrow) {
+			//desce player vermelho
+			player.red.goDown();
+		} else if(key.which === escKey) {
+			goMenu();
+		}	
+	}
+
+	function pvwKeyPressed(key) {
+		if(key.which === upArrow) {
+			//sobe player vermelho
+			player.red.goUp();
+		} else if(key.which === downArrow) {
+			//desce player vermelho
+			player.red.goDown();
+		} else if(key.which === escKey) {
+			goMenu();
 		}
 	}
 
@@ -507,6 +601,15 @@ window.onload = function() {
 		if(key.which === upArrow || key.which === downArrow) {
 			player.red.stop();
 		}		
+	}
+
+	function goMenu() {
+		gameMode = 0;
+		blueScore = 0;
+		redScore = 0;
+		computerScore = 0;
+		wallScore = 0;
+		coopScore = 0;
 	}
 
 	init();
