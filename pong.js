@@ -3,11 +3,11 @@ window.onload = function() {
 	document.addEventListener("keydown", keyPressed);
 	document.addEventListener("keyup", keyReleased)
 
-	//0: menu; 1: player vs player; 2: player vs computer; 3: co-op 4: Player vs Wall;
+	//0: menu; 1: player vs player; 2: player vs computer; 3: co-op 4: Player vs Wall; 5: Watch the Chaos
 	var gameMode = 0;
 	var W = 800, H = 400;
 	var upArrow = 38, downArrow = 40, wKey = 87, sKey = 83, enterKey = 13, escKey = 27;
-	var blueScore = 0, redScore = 0, computerScore = 0, coopScore = 0, wallScore = 0;
+	var blueScore = 0, redScore = 0, computerScore = 0, coopScore = 0, wallScore = 0, chaosScore = 0;
 	var player = {};
 	var balls;
 	var powerUp;
@@ -23,7 +23,7 @@ window.onload = function() {
 			draw: function() {
 				var width = ctx.measureText(this.txt).width;
 				var x = W/2 - width/2;
-				var y = 150;
+				var y = 90;
 				ctx.fillText(this.txt, x, y);
 				if(menu.selected === 0) {
 					ctx.fillRect(x, y+10, width, 2);
@@ -35,7 +35,7 @@ window.onload = function() {
 			draw: function() {
 				var width = ctx.measureText(this.txt).width;
 				var x = W/2 - width/2;
-				var y = 210;
+				var y = 150;
 				ctx.fillText(this.txt, x, y);
 				if(menu.selected === 1) {
 					ctx.fillRect(x, y+10, width, 2);
@@ -47,7 +47,7 @@ window.onload = function() {
 			draw: function() {
 				var width = ctx.measureText(this.txt).width;
 				var x = W/2 - width/2;
-				var y = 270;
+				var y = 210;
 				ctx.fillText(this.txt, x, y);
 				if(menu.selected === 2) {
 					ctx.fillRect(x, y+10, width, 2);
@@ -59,17 +59,26 @@ window.onload = function() {
 			draw: function() {
 				var width = ctx.measureText(this.txt).width;
 				var x = W/2 - width/2;
-				var y = 330;
+				var y = 270;
 				ctx.fillText(this.txt, x, y);
 				if(menu.selected === 3) {
 					ctx.fillRect(x, y+10, width, 2);
 				}
 			}
-		}, 
-		font: "30px Helvetica",
-		update: function() {
-
 		},
+		wtc : {
+			txt: "Watch the Chaos!",
+			draw: function() {
+				var width = ctx.measureText(this.txt).width;
+				var x = W/2 - width/2;
+				var y = 330;
+				ctx.fillText(this.txt, x, y);
+				if(menu.selected === 4) {
+					ctx.fillRect(x, y+10, width, 2);
+				}
+			}
+		},
+		font: "30px Helvetica",
 		draw: function() {
 			ctx.fillStyle = "#FFF";
 			ctx.font = this.font;
@@ -77,16 +86,17 @@ window.onload = function() {
 			this.pvc.draw();
 			this.coop.draw();
 			this.pvw.draw();
+			this.wtc.draw();
 		},
 		selectUp: function() {
 			this.selected--;
 			if(this.selected < 0) {
-				this.selected = 3;
+				this.selected = 4;
 			}
 		},
 		selectDown: function() {
 			this.selected++;
-			if(this.selected > 3) {
+			if(this.selected > 4) {
 				this.selected = 0;
 			}
 		}, 
@@ -100,9 +110,12 @@ window.onload = function() {
 			} else if(this.selected === 2) {
 				this.selected = 0;
 				startCoOp();
-			} else {
+			} else if(this.selected === 3){
 				this.selected = 0;
 				startPvW();
+			} else {
+				this.selected = 0;
+				startWtC();
 			}
 		}
 	};
@@ -169,12 +182,13 @@ window.onload = function() {
 		this.activate = function(ball) {
 			this.visible = false;
 			if(this.type === 0) {
-				balls.push(new Ball(ball.x, ball.y, ball.dx < 0 ? -4 : 4, ball.dy*-1))
+				var color = Math.floor(Math.random() * 4095/*FFF*/).toString(16);
+				balls.push(new Ball(ball.x, ball.y, ball.dx < 0 ? -4 : 4, ball.dy*-1, color));
 			} else if(this.type === 1) {
 				middleWall.activate();
 			} else if(this.type === 2) {
-				for (var i = 0; i < balls.length; i++) {
-					balls[i].size += 2;
+				if(ball.size < 120) {
+					ball.size += 20;
 				}
 			}
 			this.randomize();
@@ -234,12 +248,13 @@ window.onload = function() {
 		};
 	}
 
-	function Ball(x, y, dx, dy) {
+	function Ball(x, y, dx, dy, color) {
 		this.x = x;
 		this.y = y;
 		this.size = 20;
 		this.dx = dx;
 		this.dy = dy;
+		this.color = color === undefined ? "#FFF" : color;
 		this.update = function() {
 			this.y += this.dy;
 			this.x += this.dx;
@@ -301,7 +316,7 @@ window.onload = function() {
 			this.checkCollision();	
 		}
 		this.draw = function() {
-			ctx.fillStyle = "#FFF";
+			ctx.fillStyle = this.color;
 			ctx.fillRect(this.x, this.y, this.size, this.size);
 		};
 		this.reset = function() {
@@ -338,9 +353,15 @@ window.onload = function() {
 				}
 			} else if(gameMode === 4) {
 				if(this.dx < 0) {
-					this.wallCollision();
+					this.leftWallCollision();
 				} else {
 					this.redCollision();
+				}
+			} else if(gameMode === 5){
+				if(this.dx < 0) {
+					this.leftWallCollision();
+				} else {
+					this.rightWallCollision();
 				}
 			}
 		};
@@ -357,6 +378,9 @@ window.onload = function() {
 					}
 					if(gameMode === 3 && this.dy !== 0) {
 						coopScore++;
+					}
+					if(this.size > 20) {
+						this.size -= 10;
 					}
 				}
 			}
@@ -375,6 +399,9 @@ window.onload = function() {
 					if(gameMode === 3 && this.dy !== 0) {
 						coopScore++;
 					}
+					if(this.size > 20) {
+						this.size -= 10;
+					}
 				}
 			}
 		};
@@ -389,16 +416,26 @@ window.onload = function() {
 					if(this.dx < 12) {
 						this.dx += 0.5;
 					}
+					if(this.size > 20) {
+						this.size -= 10;
+					}
 				}
 			}
 		};
-		this.wallCollision = function() {
-			if(this.x < wall.x + wall.w) {
-				this.x = wall.x + wall.w;
+		this.leftWallCollision = function() {
+			if(this.x < leftWall.x + leftWall.w) {
+				this.x = leftWall.x + leftWall.w;
 				this.dx *= -1;
 				if(this.dy !== 0) {
-					wallScore++;
+					gameMode === 4 ? wallScore++ : chaosScore++;
 				}
+				if(this.dx < 12) {
+					this.dx += 0.5;
+				}
+				if(this.size > 20) {
+					this.size -= 10;
+				}
+				leftWall.color = this.color;
 			}
 		};
 		this.powerUpCollision = function() {
@@ -417,15 +454,37 @@ window.onload = function() {
 					if(this.x < middleWall.x + middleWall.w) {
 						this.dx *= -1;
 						middleWall.getHit();
+						if(this.size > 20) {
+							this.size -= 10;
+						}
 					}
 				} else {
 					if(this.x + this.size > middleWall.x) {
 						this.dx *= -1;
 						middleWall.getHit();
+						if(this.size > 20) {
+							this.size -= 10;
+						}
 					}
 				}
 			}
-		}
+		};
+		this.rightWallCollision = function() {
+			if(this.x + this.size > rightWall.x) {
+				this.x = rightWall.x - this.size;
+				this.dx *= -1;
+				if(this.dy !== 0) {
+					chaosScore++;
+				}
+				if(this.dx > -12) {
+					this.dx -= 0.5;
+				}
+				if(this.size > 20) {
+					this.size -= 10;
+				}
+				rightWall.color = this.color;
+			}
+		};
 	}
 
 	var computer = {
@@ -476,8 +535,20 @@ window.onload = function() {
 		}
 	};
 
-	var wall = {
+	var leftWall = {
 		x: 20,
+		y: 0,
+		w: 20,
+		h: H,
+		color: "#FFF",
+		draw: function() {
+			ctx.fillStyle = this.color;
+			ctx.fillRect(this.x, this.y, this.w, this.h);
+		}
+	};
+
+	var rightWall = {
+		x: W - 40,
 		y: 0,
 		w: 20,
 		h: H,
@@ -509,6 +580,8 @@ window.onload = function() {
 			updateCoOp();
 		} else if(gameMode === 4){
 			updatePvW();
+		} else if(gameMode === 5){
+			updateWtC();
 		}
 	}
 
@@ -543,6 +616,12 @@ window.onload = function() {
 		}
 	}
 
+	function updateWtC() {
+		for(var i = 0; i < balls.length; i++) {
+			balls[i].update();
+		}	
+	}
+
 	function draw() {
 		//0: menu; 1: player vs player; 2: player vs computer; 3: co-op 4: Player vs Wall;
 		drawScenario();
@@ -558,8 +637,11 @@ window.onload = function() {
 		} else if(gameMode === 3) {
 			drawCoOp();
 			powerUp.draw();
-		} else {
+		} else if(gameMode === 4){
 			drawPvW();
+			powerUp.draw();
+		} else {
+			drawWtC();
 			powerUp.draw();
 		}
 	}
@@ -621,10 +703,25 @@ window.onload = function() {
 		var y = 40;
 		ctx.fillText(wallScore, x, y);
 		player.red.draw();
-		wall.draw();
+		leftWall.draw();
 		for(var i = 0; i < balls.length; i++) {
 			balls[i].draw();
 		}
+	}
+
+	function drawWtC() {
+		leftWall.draw();
+		rightWall.draw();
+		for(var i = 0; i < balls.length; i++) {
+			balls[i].draw();
+		}
+		ctx.font="40px Helvetica";
+		var width = ctx.measureText(chaosScore).width;
+		var x = W/2 - width/2;
+		var y = H/8;
+		ctx.fillStyle = "#F00";
+		ctx.fillText(chaosScore, x, y);
+		console.log(balls.length);
 	}
 
 	function startPvP() {
@@ -654,6 +751,11 @@ window.onload = function() {
 		balls = [new Ball((W-20)/2, (H-20)/2, 4, 0)];
 	}
 
+	function startWtC() {
+		gameMode = 5;
+		balls = [new Ball((W-20)/2, (H-20)/2, 4, 8)];		
+	}
+
 	function keyPressed(key) {
 		if(gameMode === 0) {
 			menuKeyPressed(key);
@@ -669,6 +771,9 @@ window.onload = function() {
 		}
 		if(gameMode === 4) {
 			pvwKeyPressed(key);
+		}
+		if(gameMode === 5) {
+			wtcKeyPressed(key);
 		}
 
 	}
@@ -739,6 +844,12 @@ window.onload = function() {
 			//desce player vermelho
 			player.red.goDown();
 		} else if(key.which === escKey) {
+			goMenu();
+		}
+	}
+
+	function wtcKeyPressed(key) {
+		if(key.which === escKey) {
 			goMenu();
 		}
 	}
