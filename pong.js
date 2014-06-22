@@ -889,11 +889,10 @@ window.onload = function(){
 	function AABBIntersect(ax, ay, aw, ah, bx, by, bw, bh) {
 		return ax < bx+bw && ay < by+bh && bx < ax+aw && by < ay+ah;
 	}
-
 	window.ondevicemotion = function(evt) {
 		if(gameMode === 1 || gameMode === 2) {
 			var dy = evt.accelerationIncludingGravity.y;
-			player.red.dy = dy*8;	
+			player.red.dy = dy*H/100;	
 		}
 	};
 	function fullscreenchange() {
